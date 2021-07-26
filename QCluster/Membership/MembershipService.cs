@@ -4,6 +4,10 @@ using System.Runtime.Serialization.Formatters.Binary;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using QCluster.Cache;
+using QCluster.Models;
+using QCluster.Storage;
 
 namespace QCluster.Membership
 {
@@ -15,28 +19,28 @@ namespace QCluster.Membership
         /// <summary>
         /// MembershipService cstor.
         /// </summary>
-        /// <param name="cache">Cache used as backplane.</param>
-        public MembershipService(IDistributedCache cache)
+        /// <param name="storageService">Storage used as backplane.</param>
+        /// <param name="options">Options to be used.</param>
+        public MembershipService(IStorageService storageService, MembershipOptions options)
         {
-            this.cache = cache;
+            this.storageService = storageService;
+            this.options = options;
         }
 
         #region Public API
         /// <summary>
         /// Registers the fact that a node is still part of the cluster.
         /// </summary>
-        /// <param name="checkin">MembershipCheckin</param>
+        /// <param name="instanceId">Id of node instance.</param>
+        /// <param name="aliveness">Aliveness</param>
         /// <param name="cancellationToken">CancellationToken</param>
-        public async Task RegisterAsync(MembershipCheckin checkin, CancellationToken cancellationToken)
+        public async Task RegisterAsync(Guid instanceId, Aliveness aliveness, CancellationToken cancellationToken, TimeSpan expiration)
         {
-            await this.cache.SetAsync(
-                checkin.InstanceId.ToString(),
-                ToByteArray(checkin),
-                new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = new TimeSpan(0, 5, 0)
-                },
-            cancellationToken);
+            await this.storageService.RegisterAsync(
+                aliveness,
+                cancellationToken,
+                expiration
+            );
         }
 
         /// <summary>
@@ -44,14 +48,14 @@ namespace QCluster.Membership
         /// </summary>
         /// <param name="instanceId">Id of node instance.</param>
         /// <param name="cancellationToken">CancellationToken</param>
-        public async Task<MembershipCheckin> GetAsync(Guid instanceId, CancellationToken cancellationToken)
+        public async Task<Aliveness> GetAsync<T>(Guid instanceId, CancellationToken cancellationToken)
         {
-            var res = await this.cache.GetAsync(instanceId.ToString(), cancellationToken);
+            var res = await this.storageService.GetAsync<Aliveness>(this.CacheKey(instanceId), cancellationToken);
             if(res == null)
             {
                 throw new ArgumentException($"There is no member with id: '{instanceId.ToString()}'");
             }
-            return (MembershipCheckin)ToObject(res);
+            return res;
         }
 
         /// <summary>
@@ -61,7 +65,7 @@ namespace QCluster.Membership
         /// <param name="cancellationToken">CancellationToken</param>
         public async Task<bool> IsMember(Guid instanceId, CancellationToken cancellationToken)
         {
-            var res = await this.cache.GetAsync(instanceId.ToString(), cancellationToken);
+            var res = await this.storageService.GetAsync<Aliveness>(this.CacheKey(instanceId), cancellationToken);
             return res == null;
         }
         #endregion
@@ -97,10 +101,16 @@ namespace QCluster.Membership
                 return ms.ToArray();
             }
         }
+
+        private string CacheKey(Guid instanceId)
+        {
+            return $"memberhip-member-{instanceId.ToString()}";
+        }
         #endregion
 
         #region Private Members
-        private readonly IDistributedCache cache;
+        private MembershipOptions options;
+        private readonly IStorageService storageService;
         #endregion
     }
 }

@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 namespace QCluster.Health
@@ -9,10 +8,8 @@ namespace QCluster.Health
     public interface IClusterHealthPolicy
     {
         /// <summary>
-        /// 
+        /// Determines the cluster health.
         /// </summary>
-        /// <param name="workers"></param>
-        /// <returns></returns>
         HealthCheckResult CheckHealth();
     }
 }

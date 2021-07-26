@@ -7,24 +7,43 @@ using System;
 using System.Linq;
 using QCluster.Streams;
 using Microsoft.Extensions.DependencyInjection;
+using QCluster.Membership;
+using QCluster.Health;
+using QCluster.Storage;
 using Microsoft.Extensions.Options;
-using QCluster.Config;
 
-namespace QCluster
+namespace QCluster.Nodes
 {
-    public class ClusterService : BackgroundService
+    /// <summary>
+    /// ClusterNode reprsents a single node within a QCluster and is the service root for the instance.
+    /// </summary>
+    public class ClusterNode : BackgroundService
     {
-        public ClusterService(ILogger<ClusterService> logger, IServiceCollection services, IEnumerable<IStreamAdapter> adapters, IOptions<ClusterConfigOptions> options)
+        public ClusterNode(
+            ILogger<ClusterNode> logger,
+            IServiceCollection services,
+            IEnumerable<IStreamAdapter> adapters,
+            IOptions<ClusterNodeOptions> clusterOptions,
+            IOptions<MembershipOptions> membershipOptions,
+            IStorageService storage,
+            IClusterHealthPolicy healthPolicy)
         {
             this.logger = logger;
             this.services = services;
             this.providers = adapters.Select(x => x.Provider);
-            this.options = options.Value;
+            this.clusterOptions = clusterOptions is null ? new ClusterNodeOptions() : clusterOptions.Value;
+            this.membershipOptions = membershipOptions is null ? new MembershipOptions() : membershipOptions.Value;
+            this.instanceId = Guid.NewGuid();
+            this.storage = storage;
+            this.healthPolicy = healthPolicy;
+            this.membershipService = new MembershipService(this.storage, this.membershipOptions);
+
         }
 
         #region BackgroundService
         protected override Task ExecuteAsync(CancellationToken cancellationToken)
         {
+            // Register Node with cluster.
             return this.InitAdapters(cancellationToken);
         }
         #endregion
@@ -39,6 +58,7 @@ namespace QCluster
                     var instruction = provider.Pop();
                     if(instruction != null)
                     {
+                        // If instruction, put blocking call to catch tasks.
                         Task.WhenAll(this.Notify(instruction));
                     }
                 }
@@ -60,7 +80,8 @@ namespace QCluster
         private List<Task> NotifyListeners<T>(T instruction) where T : IStreamInstruction
         {
             // Get listeners based on type T.
-            var listeners =  this.services.BuildServiceProvider().GetServices<IStreamListener<T>>();
+            var listeners =  this.services.BuildServiceProvider()
+                                          .GetServices<IStreamListener<T>>();
             // Return a list of subscription tasks.
             var tasks = listeners.Select(x => x.OnSubscribeAsync(instruction)).ToList();
             return tasks;
@@ -68,9 +89,14 @@ namespace QCluster
         #endregion
         #region  Private Members
         private IServiceCollection services;
+        private MembershipService membershipService;
         private IEnumerable<IStreamProvider> providers;
-        private ClusterConfigOptions options;
-        private ILogger<ClusterService> logger;
+        private IEnumerable<IStreamListener<IStreamInstruction>> listeners;
+        private ClusterNodeOptions clusterOptions;
+        private MembershipOptions membershipOptions;
+        private ILogger<ClusterNode> logger;
+        private IStorageService storage;
+        private IClusterHealthPolicy healthPolicy;
         private Guid instanceId;
         #endregion
     }
