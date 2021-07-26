@@ -3,7 +3,7 @@
 namespace QCluster.Streams
 {
     /// <summary>
-    /// IStreamAdapter is the adapter for a stream sending IStreamInstruction of type T.
+    /// IStreamAdapter is the adapter for a stream sending IStreamInstruction.
     /// </summary>
     public interface IStreamAdapter
     {
