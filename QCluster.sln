@@ -5,8 +5,6 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QCluster", "QCluster\QCluster.csproj", "{69F77DBF-4C5F-4FEE-B621-6A31DAAC013C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Test", "Test\Test.csproj", "{A6303DF1-6B88-4C26-917B-55E111414347}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Cluster", "Cluster\Cluster.csproj", "{B7F23631-D215-4E3E-AAA8-298FCF6397C8}"
 EndProject
 Global
