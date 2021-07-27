@@ -6,15 +6,14 @@ namespace Cluster
     {
         public static void Main(string[] args)
         {
-            CreateHostBuilder(args).Build().Run();
-        }
-
-        public static IHostBuilder CreateHostBuilder(string[] args) =>
             Host.CreateDefaultBuilder(args)
-                .ConfigureServices((hostContext, services) =>
+                .ConfigureServices((hostContext, services) => 
                 {
-                    // Incomplete setup..
-                    services.AddQCluster().UseMemoryStreams();
-                });
+                    services.AddQCluster()
+                            .UseMemoryStreams();
+                })
+                .Build()
+                .Run();
+        }
     }
 }
