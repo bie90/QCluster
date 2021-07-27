@@ -34,12 +34,11 @@ namespace QCluster.Membership
         /// <param name="instanceId">Id of node instance.</param>
         /// <param name="aliveness">Aliveness</param>
         /// <param name="cancellationToken">CancellationToken</param>
-        public async Task RegisterAsync(Guid instanceId, Aliveness aliveness, CancellationToken cancellationToken, TimeSpan expiration)
+        public async Task RegisterAsync(Guid instanceId, Aliveness aliveness, CancellationToken cancellationToken)
         {
             await this.storageService.RegisterAsync(
                 aliveness,
-                cancellationToken,
-                expiration
+                cancellationToken
             );
         }
 

@@ -14,8 +14,7 @@ namespace QCluster.Storage
         /// </summary>
         /// <param name="o">Object</param>
         /// <param name="cancellationToken">CancellationToken</param>
-        /// <param name="expiration">Expiration timeoff if supported by implementation.</param>
-        Task RegisterAsync<T>(T o, CancellationToken cancellationToken, TimeSpan expiration) where T : IStorageObject;
+        Task RegisterAsync<T>(T o, CancellationToken cancellationToken) where T : IStorageObject;
         /// <summary>
         /// Returns the a object of type T from the storge by key.
         /// </summary>

@@ -23,14 +23,15 @@ namespace QCluster.Cache
         }
 
         #region Public API
-        public async Task RegisterAsync<T>(T o, CancellationToken cancellationToken, TimeSpan expiration) where T : IStorageObject
+        public async Task RegisterAsync<T>(T o, CancellationToken cancellationToken) where T : IStorageObject
         {
+            // Wrap exp. in option.
             await this.cache.SetAsync(
                 o.Key,
                 this.ToByteArray(o),
                 new DistributedCacheEntryOptions
                 {
-                    AbsoluteExpirationRelativeToNow = expiration
+                    AbsoluteExpirationRelativeToNow = new TimeSpan(0, 5, 0)
                 },
                 cancellationToken
             );
